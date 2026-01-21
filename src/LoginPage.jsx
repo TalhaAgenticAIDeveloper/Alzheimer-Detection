@@ -2,17 +2,32 @@ import React, { useState } from 'react'
 import { Brain, Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import ForgotPasswordPage from './ForgotPasswordPage'
 
-function LoginPage({ onNavigateHome }) {
+function LoginPage({ onNavigateHome, onLoginSuccess }) {
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
   const [showForgotPassword, setShowForgotPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    console.log('Login attempt:', { email, password, rememberMe })
-    // Add login logic here
+    setError('')
+    
+    if (!email || !password) {
+      setError('Please enter both email and password')
+      return
+    }
+
+    setLoading(true)
+    // Simulate API call
+    setTimeout(() => {
+      setLoading(false)
+      console.log('Login attempt:', { email, password, rememberMe })
+      // Call the success callback to set authentication
+      onLoginSuccess({ email, name: email.split('@')[0] })
+    }, 1500)
   }
 
   if (showForgotPassword) {
@@ -51,6 +66,13 @@ function LoginPage({ onNavigateHome }) {
 
           {/* Login Form Card */}
           <div className="bg-white rounded-2xl shadow-lg p-8 md:p-10">
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+                <span className="text-red-600 font-semibold">✕</span>
+                <p className="text-red-700 text-sm font-medium">{error}</p>
+              </div>
+            )}
+            
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Email Field */}
               <div>
@@ -63,7 +85,10 @@ function LoginPage({ onNavigateHome }) {
                     id="email"
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value)
+                      setError('')
+                    }}
                     placeholder="doctor@neurohealthcare.com"
                     className="w-full border border-gray-300 rounded-lg pl-12 pr-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
                     required
@@ -82,7 +107,10 @@ function LoginPage({ onNavigateHome }) {
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value)
+                      setError('')
+                    }}
                     placeholder="••••••••"
                     className="w-full border border-gray-300 rounded-lg pl-12 pr-12 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
                     required
@@ -120,9 +148,10 @@ function LoginPage({ onNavigateHome }) {
               {/* Submit Button */}
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-3 rounded-lg transition shadow-md hover:shadow-lg"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-3 rounded-lg transition shadow-md hover:shadow-lg disabled:cursor-not-allowed"
               >
-                Sign In
+                {loading ? 'Signing in...' : 'Sign In'}
               </button>
             </form>
 

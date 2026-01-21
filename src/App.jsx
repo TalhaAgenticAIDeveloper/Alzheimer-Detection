@@ -1,15 +1,34 @@
 import React, { useState } from 'react'
 import { Menu, X, Brain, BarChart3, TrendingUp, Lock, CheckCircle, Users, ArrowRight, Upload, MessageCircle } from 'lucide-react'
 import LoginPage from './LoginPage'
+import AdminDashboard from './AdminDashboard'
 
 function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
   const [currentPage, setCurrentPage] = useState('home') // 'home' or 'login'
+  const [authUser, setAuthUser] = useState(null) // null or { email, name }
 
-  if (currentPage === 'login') {
-    return <LoginPage onNavigateHome={() => setCurrentPage('home')} />
+  const handleLogin = (user) => {
+    setAuthUser(user)
+    setCurrentPage('admin')
   }
 
+  const handleLogout = () => {
+    setAuthUser(null)
+    setCurrentPage('home')
+  }
+
+  // Show admin dashboard if user is authenticated
+  if (authUser) {
+    return <AdminDashboard onLogout={handleLogout} />
+  }
+
+  // Show login page if requested
+  if (currentPage === 'login') {
+    return <LoginPage onNavigateHome={() => setCurrentPage('home')} onLoginSuccess={handleLogin} />
+  }
+
+  // Show landing page
   return (
     <div className="min-h-screen bg-white">
       {/* ===== HEADER / NAVBAR ===== */}
