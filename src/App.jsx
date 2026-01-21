@@ -1,8 +1,14 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Menu, X, Brain, BarChart3, TrendingUp, Lock, CheckCircle, Users, ArrowRight, Upload } from 'lucide-react'
+import LoginPage from './LoginPage'
 
 function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
+  const [currentPage, setCurrentPage] = useState('home') // 'home' or 'login'
+
+  if (currentPage === 'login') {
+    return <LoginPage onNavigateHome={() => setCurrentPage('home')} />
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -30,7 +36,10 @@ function App() {
 
             {/* Right Side - Desktop */}
             <div className="hidden md:flex items-center gap-4">
-              <button className="text-gray-700 hover:text-gray-900 font-medium transition">
+              <button
+                onClick={() => setCurrentPage('login')}
+                className="text-gray-700 hover:text-gray-900 font-medium transition"
+              >
                 Log In
               </button>
               <button className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-medium transition">
@@ -57,7 +66,12 @@ function App() {
                 <a href="#detection" className="text-gray-700 hover:text-green-500 font-medium">Detection</a>
                 <a href="#team" className="text-gray-700 hover:text-green-500 font-medium">Research</a>
                 <a href="#contact" className="text-gray-700 hover:text-green-500 font-medium">Contact</a>
-                <button className="text-gray-700 hover:text-gray-900 font-medium">Log In</button>
+                <button
+                  onClick={() => setCurrentPage('login')}
+                  className="text-gray-700 hover:text-gray-900 font-medium"
+                >
+                  Log In
+                </button>
                 <button className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-medium w-full">
                   Start Screening
                 </button>
