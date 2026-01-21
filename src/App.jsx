@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Menu, X, Brain, BarChart3, TrendingUp, Lock, CheckCircle, Users, ArrowRight, Upload } from 'lucide-react'
+import { Menu, X, Brain, BarChart3, TrendingUp, Lock, CheckCircle, Users, ArrowRight, Upload, MessageCircle } from 'lucide-react'
 import LoginPage from './LoginPage'
 
 function App() {
@@ -556,6 +556,19 @@ function App() {
           </div>
         </div>
       </footer>
+
+      {/* ===== STICKY WHATSAPP BUTTON ===== */}
+      <div className="fixed bottom-8 right-8 z-40">
+        <a
+          href="https://wa.me/?text=Hello%20NeuroCare%20AI%20team"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center w-16 h-16 bg-green-500 hover:bg-green-600 rounded-full shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-110"
+          title="Chat with us on WhatsApp"
+        >
+          <MessageCircle className="w-8 h-8 text-white" />
+        </a>
+      </div>
     </div>
   )
 }
