@@ -1,149 +1,200 @@
-import React, { useState } from 'react'
-import { X, Mail, Lock, Eye, EyeOff, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react'
+import React, { useState } from "react";
+import {
+  X,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  CheckCircle,
+  AlertCircle,
+  ArrowLeft,
+} from "lucide-react";
+import ApiService from "../../services/api";
 
 function UserFormModal({ onClose, onAddUser }) {
-  const [step, setStep] = useState('form') // 'form', 'email-verify', 'otp-verify', 'success'
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [emailVerified, setEmailVerified] = useState(false)
+  const [step, setStep] = useState("form"); // 'form', 'email-verify', 'otp-verify', 'success'
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
+
+  const userType = "Doctor"; // Only doctors can be created
 
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    age: '',
-    gender: '',
-    degree: '',
-    experience: '',
-    hospital: ''
-  })
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    age: "",
+    gender: "",
+    degree: "",
+    experience: "",
+    hospital: "",
+  });
 
-  const [otp, setOtp] = useState('')
+  const [otp, setOtp] = useState("");
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
+    const { name, value } = e.target;
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
-    }))
-    setError('')
-  }
+      [name]: value,
+    }));
+    setError("");
+  };
 
   const handleEmailVerification = async (e) => {
-    e.preventDefault()
-    setError('')
+    e.preventDefault();
+    setError("");
 
     if (!formData.email) {
-      setError('Please enter email address')
-      return
+      setError("Please enter email address");
+      return;
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      setError('Please enter a valid email address')
-      return
+      setError("Please enter a valid email address");
+      return;
     }
 
-    setLoading(true)
-    // Simulate API call to send OTP
-    setTimeout(() => {
-      setLoading(false)
-      setStep('otp-verify')
-    }, 1500)
-  }
+    setLoading(true);
+
+    try {
+      const result = await ApiService.sendDoctorVerificationOTP(formData.email);
+
+      if (result.success) {
+        setStep("otp-verify");
+      } else {
+        setError(result.error || "Failed to send verification code");
+      }
+    } catch (error) {
+      setError("Network error. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleOtpVerification = async (e) => {
-    e.preventDefault()
-    setError('')
+    e.preventDefault();
+    setError("");
 
     if (!otp) {
-      setError('Please enter OTP')
-      return
+      setError("Please enter OTP");
+      return;
     }
 
     if (otp.length !== 6) {
-      setError('OTP must be 6 digits')
-      return
+      setError("OTP must be 6 digits");
+      return;
     }
 
-    setLoading(true)
-    // Simulate API call to verify OTP
-    setTimeout(() => {
-      setLoading(false)
-      setEmailVerified(true)
-      setStep('form')
-    }, 1500)
-  }
+    setLoading(true);
 
-  const handleFormSubmit = (e) => {
-    e.preventDefault()
-    setError('')
+    try {
+      const result = await ApiService.verifyDoctorEmail(formData.email, otp);
 
-    // Validation
+      if (result.success && result.data.verified) {
+        setEmailVerified(true);
+        setStep("form");
+      } else {
+        setError(
+          result.data?.message || result.error || "Invalid or expired OTP",
+        );
+      }
+    } catch (error) {
+      setError("Network error. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    // Client-side validation with specific messages
     if (!formData.firstName.trim()) {
-      setError('First name is required')
-      return
+      setError("First name is required");
+      return;
     }
     if (!formData.lastName.trim()) {
-      setError('Last name is required')
-      return
+      setError("Last name is required");
+      return;
     }
     if (!emailVerified) {
-      setError('Please verify your email first')
-      return
-    }
-    if (!formData.password) {
-      setError('Password is required')
-      return
-    }
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters')
-      return
-    }
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
-      return
-    }
-    if (!formData.age) {
-      setError('Age is required')
-      return
-    }
-    if (!formData.gender) {
-      setError('Gender is required')
-      return
-    }
-    if (!formData.degree) {
-      setError('Degree is required')
-      return
-    }
-    if (!formData.experience) {
-      setError('Years of experience is required')
-      return
-    }
-    if (!formData.hospital.trim()) {
-      setError('Hospital name is required')
-      return
+      setError("Please verify your email first");
+      return;
     }
 
-    setLoading(true)
-    // Simulate API call to create user
-    setTimeout(() => {
-      setLoading(false)
-      onAddUser({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError("Please provide a valid email address");
+      return;
+    }
+
+    if (!formData.password) {
+      setError("Password is required");
+      return;
+    }
+    if (formData.password.length < 8) {
+      setError(
+        "Password must be at least 8 characters long for security purposes.",
+      );
+      return;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      setError(
+        "Password and confirm password do not match. Please ensure both passwords are identical.",
+      );
+      return;
+    }
+    if (!formData.age) {
+      setError("Age is required");
+      return;
+    }
+    if (!formData.gender) {
+      setError("Gender is required");
+      return;
+    }
+    if (!formData.degree) {
+      setError("Degree is required");
+      return;
+    }
+    if (!formData.experience) {
+      setError("Years of experience is required");
+      return;
+    }
+    if (!formData.hospital.trim()) {
+      setError("Hospital name is required");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const userData = {
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
         email: formData.email,
+        password: formData.password,
         age: parseInt(formData.age),
         gender: formData.gender,
         degree: formData.degree,
-        experience: parseInt(formData.experience),
-        hospital: formData.hospital
-      })
-    }, 1500)
-  }
+        experience: formData.experience,
+        hospital: formData.hospital.trim(),
+      };
+
+      // Call parent's handler which will use the appropriate API
+      await onAddUser(userData);
+    } catch (error) {
+      setError("Network error. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -151,8 +202,8 @@ function UserFormModal({ onClose, onAddUser }) {
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">
-            {step === 'form' && 'Create New User'}
-            {step === 'otp-verify' && 'Verify Email'}
+            {step === "form" && `Create New ${userType}`}
+            {step === "otp-verify" && "Verify Email"}
           </h2>
           <button
             onClick={onClose}
@@ -165,19 +216,25 @@ function UserFormModal({ onClose, onAddUser }) {
         {/* Content */}
         <div className="p-6">
           {/* Email Verification Step */}
-          {step === 'otp-verify' && (
+          {step === "otp-verify" && (
             <form onSubmit={handleOtpVerification} className="space-y-6">
               {error && (
                 <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-                  <AlertCircle size={20} className="text-red-500 flex-shrink-0 mt-0.5" />
+                  <AlertCircle
+                    size={20}
+                    className="text-red-500 shrink-0 mt-0.5"
+                  />
                   <p className="text-red-700 text-sm font-medium">{error}</p>
                 </div>
               )}
 
               <div className="text-center mb-4">
                 <p className="text-gray-600 text-sm">
-                  We've sent a verification code to<br />
-                  <span className="font-semibold text-gray-900">{formData.email}</span>
+                  We've sent a verification code to
+                  <br />
+                  <span className="font-semibold text-gray-900">
+                    {formData.email}
+                  </span>
                 </p>
               </div>
 
@@ -189,7 +246,9 @@ function UserFormModal({ onClose, onAddUser }) {
                   type="text"
                   maxLength="6"
                   value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ''))}
+                  onChange={(e) =>
+                    setOtp(e.target.value.replace(/[^0-9]/g, ""))
+                  }
                   placeholder="000000"
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 text-center text-2xl tracking-widest text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 font-semibold"
                 />
@@ -198,28 +257,45 @@ function UserFormModal({ onClose, onAddUser }) {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-3 rounded-lg transition disabled:cursor-not-allowed"
+                className="w-full bg-linear-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-3 rounded-lg transition disabled:cursor-not-allowed"
               >
-                {loading ? 'Verifying...' : 'Verify Code'}
+                {loading ? "Verifying..." : "Verify Code"}
               </button>
 
               <button
                 type="button"
-                onClick={() => setStep('form')}
+                onClick={() => setStep("form")}
                 className="w-full flex items-center justify-center gap-2 text-green-600 hover:text-green-700 font-medium"
               >
                 <ArrowLeft size={18} />
                 Back to Email
               </button>
+
+              <div className="text-center mt-4">
+                <p className="text-gray-600 text-sm mb-2">
+                  Didn't receive the code?
+                </p>
+                <button
+                  type="button"
+                  onClick={handleEmailVerification}
+                  disabled={loading}
+                  className="text-green-600 hover:text-green-700 font-medium text-sm disabled:text-gray-400"
+                >
+                  {loading ? "Sending..." : "Resend Code"}
+                </button>
+              </div>
             </form>
           )}
 
           {/* User Form Step */}
-          {step === 'form' && (
+          {step === "form" && (
             <form onSubmit={handleFormSubmit} className="space-y-5">
               {error && (
                 <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-                  <AlertCircle size={20} className="text-red-500 flex-shrink-0 mt-0.5" />
+                  <AlertCircle
+                    size={20}
+                    className="text-red-500 flex-shrink-0 mt-0.5"
+                  />
                   <p className="text-red-700 text-sm font-medium">{error}</p>
                 </div>
               )}
@@ -227,9 +303,14 @@ function UserFormModal({ onClose, onAddUser }) {
               {/* Email Verification Badge */}
               {emailVerified && (
                 <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
-                  <CheckCircle size={20} className="text-green-500 flex-shrink-0 mt-0.5" />
+                  <CheckCircle
+                    size={20}
+                    className="text-green-500 flex-shrink-0 mt-0.5"
+                  />
                   <div>
-                    <p className="font-semibold text-green-900">Email Verified</p>
+                    <p className="font-semibold text-green-900">
+                      Email Verified
+                    </p>
                     <p className="text-green-700 text-sm">{formData.email}</p>
                   </div>
                 </div>
@@ -238,7 +319,9 @@ function UserFormModal({ onClose, onAddUser }) {
               {/* Name Fields */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-1">First Name</label>
+                  <label className="block text-sm font-semibold text-gray-900 mb-1">
+                    First Name
+                  </label>
                   <input
                     type="text"
                     name="firstName"
@@ -249,7 +332,9 @@ function UserFormModal({ onClose, onAddUser }) {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-1">Last Name</label>
+                  <label className="block text-sm font-semibold text-gray-900 mb-1">
+                    Last Name
+                  </label>
                   <input
                     type="text"
                     name="lastName"
@@ -264,8 +349,12 @@ function UserFormModal({ onClose, onAddUser }) {
               {/* Email Field */}
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-sm font-semibold text-gray-900">Email Address</label>
-                  {emailVerified && <CheckCircle size={16} className="text-green-500" />}
+                  <label className="text-sm font-semibold text-gray-900">
+                    Email Address
+                  </label>
+                  {emailVerified && (
+                    <CheckCircle size={16} className="text-green-500" />
+                  )}
                 </div>
                 {!emailVerified ? (
                   <div className="flex gap-2">
@@ -283,7 +372,7 @@ function UserFormModal({ onClose, onAddUser }) {
                       disabled={!formData.email || loading}
                       className="px-4 py-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white rounded-lg font-medium transition text-sm"
                     >
-                      {loading ? 'Sending...' : 'Verify'}
+                      {loading ? "Sending..." : "Send Code"}
                     </button>
                   </div>
                 ) : (
@@ -298,11 +387,13 @@ function UserFormModal({ onClose, onAddUser }) {
 
               {/* Password Fields */}
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-1">Password</label>
+                <label className="block text-sm font-semibold text-gray-900 mb-1">
+                  Password
+                </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     name="password"
                     value={formData.password}
                     onChange={handleInputChange}
@@ -320,11 +411,13 @@ function UserFormModal({ onClose, onAddUser }) {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-1">Confirm Password</label>
+                <label className="block text-sm font-semibold text-gray-900 mb-1">
+                  Confirm Password
+                </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
-                    type={showConfirmPassword ? 'text' : 'password'}
+                    type={showConfirmPassword ? "text" : "password"}
                     name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
@@ -336,7 +429,11 @@ function UserFormModal({ onClose, onAddUser }) {
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
-                    {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {showConfirmPassword ? (
+                      <EyeOff size={16} />
+                    ) : (
+                      <Eye size={16} />
+                    )}
                   </button>
                 </div>
               </div>
@@ -344,7 +441,9 @@ function UserFormModal({ onClose, onAddUser }) {
               {/* Age & Gender */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-1">Age</label>
+                  <label className="block text-sm font-semibold text-gray-900 mb-1">
+                    Age
+                  </label>
                   <input
                     type="number"
                     name="age"
@@ -355,7 +454,9 @@ function UserFormModal({ onClose, onAddUser }) {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-1">Gender</label>
+                  <label className="block text-sm font-semibold text-gray-900 mb-1">
+                    Gender
+                  </label>
                   <select
                     name="gender"
                     value={formData.gender}
@@ -373,7 +474,9 @@ function UserFormModal({ onClose, onAddUser }) {
               {/* Degree & Experience */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-1">Degree</label>
+                  <label className="block text-sm font-semibold text-gray-900 mb-1">
+                    Degree
+                  </label>
                   <select
                     name="degree"
                     value={formData.degree}
@@ -388,7 +491,9 @@ function UserFormModal({ onClose, onAddUser }) {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-1">Experience (yrs)</label>
+                  <label className="block text-sm font-semibold text-gray-900 mb-1">
+                    Experience (yrs)
+                  </label>
                   <input
                     type="number"
                     name="experience"
@@ -402,7 +507,9 @@ function UserFormModal({ onClose, onAddUser }) {
 
               {/* Hospital */}
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-1">Hospital Name</label>
+                <label className="block text-sm font-semibold text-gray-900 mb-1">
+                  Hospital Name
+                </label>
                 <input
                   type="text"
                   name="hospital"
@@ -419,7 +526,7 @@ function UserFormModal({ onClose, onAddUser }) {
                 disabled={loading || !emailVerified}
                 className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-3 rounded-lg transition disabled:cursor-not-allowed"
               >
-                {loading ? 'Creating User...' : 'Create User'}
+                {loading ? "Creating User..." : "Create User"}
               </button>
 
               <button
@@ -434,7 +541,7 @@ function UserFormModal({ onClose, onAddUser }) {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default UserFormModal
+export default UserFormModal;
